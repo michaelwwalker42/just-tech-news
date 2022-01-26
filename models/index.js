@@ -1,6 +1,7 @@
 const User = require("./User");
 const Post = require("./Post");
 const Vote = require('./Vote');
+const Comment = require('./Comment');
 
 // create associations
 
@@ -54,9 +55,25 @@ Post.hasMany(Vote, {
     foreignKey: 'post_id'
 });
 
+Comment.belongsTo(User, {
+    foreignKey: 'user_id'
+});
+
+Comment.belongsTo(Post, {
+    foreignKey: 'post_id'
+});
+
+User.hasMany(Comment, {
+    foreignKey: 'user_id'
+});
+
+Post.hasMany(Comment, {
+    foreignKey: 'post_id'
+});
+
 // These association changes will not take affect in the User table, 
 // because there isn't a way to make changes to the table dynamically. 
 // We will need to drop the table and create a new one 
 // in order for the associations to take affect.
 
-module.exports = { User, Post, Vote };
+module.exports = { User, Post, Vote, Comment };
