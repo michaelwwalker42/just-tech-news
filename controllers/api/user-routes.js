@@ -64,11 +64,63 @@ router.post('/', (req, res) => {
         email: req.body.email,
         password: req.body.password
     })
-        .then(dbUserData => res.json(dbUserData))
-        .catch(err => {
-            console.log(err);
-            res.status(500).json(err);
+        .then(dbUserData => {
+            req.session.save(() => {
+                // We want to make sure the session is created before we send the response back,
+                // so we're wrapping the variables in a callback. The req.session.save() method 
+                // will initiate the creation of the session then run the callback function once complete.
+                req.session.user_id = dbUserData.id;
+                req.session.username = dbUserData.username;
+                req.session.loggedIn = true;
+
+                res.json(dbUserData);
+            });
+        })
+});
+
+// login route
+router.post('/login', (req, res) => {
+    User.findOne({
+        where: {
+            email: req.body.email
+        }
+    }).then(dbUserData => {
+        if (!dbUserData) {
+            res.status(400).json({ message: 'No user with that email address!' });
+            return;
+        }
+
+        const validPassword = dbUserData.checkPassword(req.body.password);
+
+        if (!validPassword) {
+            res.status(400).json({ message: 'Incorrect password!' });
+            return;
+        }
+
+        req.session.save(() => {
+            // declare session variables
+            req.session.user_id = dbUserData.id;
+            req.session.username = dbUserData.username;
+            req.session.loggedIn = true;
+
+            res.json({ user: dbUserData, message: 'You are now logged in!' });
         });
+    });
+});
+// logout route
+router.post('/logout', (req, res) => {
+    if (req.session.loggedIn) {
+        // We can use the destroy() method to clear the session
+        req.session.destroy(() => {
+            // The HTTP 204 No Content success status response code indicates
+            // that a request has succeeded, but that the client doesn't need
+            // to navigate away from its current page.
+          res.status(204).end();
+        });
+      }
+      else {
+        res.status(404).end();
+      }
 });
 
 // PUT /api/users/1
